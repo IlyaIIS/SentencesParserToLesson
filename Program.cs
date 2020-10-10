@@ -16,9 +16,9 @@ namespace SentencesParser
             int nMax = GetInt("Введите число!");
 
             Console.WriteLine("Введите текст:");
-            sentence = SplitSentence(Console.ReadLine());       //"a b.a c.b a.b b.b b. d e f. d e d. d e f g h w z. h w a"
+            sentence = SplitSentence(Console.ReadLine().ToLower());       //"a b.a c.b a.b b.b b. d e f. d e d. d e f g h w z. h w a"
+            //sentence = SplitSentence(File.ReadAllText("HarryPotterText.txt").ToLower());
 
-            //nGrams = ParceTwoAndThreeGrams(biGram, triGram);         //Анализ би и триграмм
             nGrams = ParceNGrams(FindNGrams(sentence, 2));
             for (int i = 3; i <= nMax; i++)
                 nGrams = nGrams.Concat(ParceNGrams(FindNGrams(sentence, i))).ToDictionary(x => x.Key, x => x.Value);
@@ -42,90 +42,6 @@ namespace SentencesParser
             } while (repeat);
 
             return output;
-        }
-        static Dictionary<string, string> ParceTwoAndThreeGrams(List<string[]> biGram, List<string[]> triGram)
-        {
-            Dictionary<string, string> nGrams = new Dictionary<string, string>();
-
-            for (int num = 0; num < biGram.Count;)
-            {
-                Dictionary<string, int> valueDict = new Dictionary<string, int>();
-                string key = biGram[num][0];
-                for (int i = num; i < biGram.Count; i++)               //формирование словаря с количеством сочитаний key - value
-                {
-                    if (biGram[i][0] == key)
-                    {
-                        if (valueDict.ContainsKey(biGram[i][1]))
-                            valueDict[biGram[i][1]]++;
-                        else
-                            valueDict.Add(biGram[i][1], 1);
-
-                        biGram.RemoveAt(i);
-                        i--;
-                    }
-                }
-
-                int max = valueDict.Values.Max();
-
-                for (int i = 0; i < valueDict.Keys.Count; i++)              //Убирает из словаря редко встреченные элементы
-                {
-                    string k = valueDict.ElementAt(i).Key;
-                    if (valueDict[k] < max) { valueDict.Remove(k); i--; }
-                }
-
-                for (int i = 0; i < valueDict.Keys.Count - 1;)              //Убирает из словаря элементы по лексикографическому признаку
-                {
-                    string kNow = valueDict.ElementAt(i).Key;
-                    string kNext = valueDict.ElementAt(i + 1).Key;
-                    if (String.CompareOrdinal(kNow, 0, kNext, 0, Math.Max(kNow.Length, kNext.Length)) < 0)   // 1 если левый хуже, -1 если правый хуже
-                        valueDict.Remove(kNext);
-                    else
-                        valueDict.Remove(kNow);
-                }
-
-                nGrams.Add(key, valueDict.ElementAt(0).Key);
-            }
-
-            for (int num = 0; num < triGram.Count;)
-            {
-                Dictionary<string, int> valueDict = new Dictionary<string, int>();
-                string[] key = { triGram[num][0], triGram[num][1] };                           //
-                for (int i = num; i < triGram.Count; i++)               //формирование словаря с количеством сочитаний key - value
-                {
-                    if (triGram[i][0] == key[0] && triGram[i][1] == key[1])                           //
-                    {
-                        if (valueDict.ContainsKey(triGram[i][2]))
-                            valueDict[triGram[i][2]]++;
-                        else
-                            valueDict.Add(triGram[i][2], 1);
-
-                        triGram.RemoveAt(i);
-                        i--;
-                    }
-                }
-
-                int max = valueDict.Values.Max();
-
-                for (int i = 0; i < valueDict.Keys.Count; i++)              //Убирает из словаря редко встреченные элементы
-                {
-                    string k = valueDict.ElementAt(i).Key;
-                    if (valueDict[k] < max) { valueDict.Remove(k); i--; }
-                }
-
-                for (int i = 0; i < valueDict.Keys.Count - 1;)              //Убирает из словаря элементы по лексикографическому признаку
-                {
-                    string kNow = valueDict.ElementAt(i).Key;
-                    string kNext = valueDict.ElementAt(i + 1).Key;
-                    if (String.CompareOrdinal(kNow, 0, kNext, 0, Math.Max(kNow.Length, kNext.Length)) < 0)   // 1 если левый хуже, -1 если правый хуже
-                        valueDict.Remove(kNext);
-                    else
-                        valueDict.Remove(kNow);
-                }
-
-                nGrams.Add(key[0] + " " + key[1], valueDict.ElementAt(0).Key);
-            }
-
-            return nGrams;
         }
 
         static Dictionary<string, string> ParceNGrams(List<string[]> nGram)
@@ -192,7 +108,7 @@ namespace SentencesParser
             }
         }
 
-            static List<string[]> FindNGrams(List<List<string>> sentence, int N)      //Возвращает лист Nмерных масивов Nграмм
+        static List<string[]> FindNGrams(List<List<string>> sentence, int N)      //Возвращает лист Nмерных масивов Nграмм
         {
             List<string[]> NGram = new List<string[]>();
 
@@ -216,7 +132,7 @@ namespace SentencesParser
         static List<List<string>> SplitSentence(String str)
         {
             str = " " + str;                                          //на случай пустых строк
-            char[] sign = { '.', '?', '!', ';', '(', ')' };           //список символов, отделяющих предложения
+            char[] sign = { '.', '?', '!', ';', ':', '(', ')' };           //список символов, отделяющих предложения
             List<List<string>> sentence = new List<List<string>>();
 
             int sentNum = 0, wordNum = 0, i = 0;
@@ -247,7 +163,7 @@ namespace SentencesParser
 
             for (int sen = 0; sen < sentence.Count; sen++)             //удаление пустых предложений
             {
-                if (sentence[sen].Count == 0) sentence.RemoveAt(sen);
+                if (sentence[sen].Count == 0) { sentence.RemoveAt(sen); sen--; }
             }
 
             /*
@@ -263,6 +179,7 @@ namespace SentencesParser
             }
             */
 
+            Console.WriteLine(sentence.Count);
             return sentence;
         }
 
